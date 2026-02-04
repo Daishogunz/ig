@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Solar System: Step 2 - Nebulae</title>
+    <title>Solar System: Galaxy Texture Edition</title>
     <style>
         body { margin: 0; overflow: hidden; background-color: #000; }
         
@@ -10,7 +10,7 @@
             position: absolute; top: 20px; left: 20px;
             color: #fff; font-family: 'Courier New', Courier, monospace;
             pointer-events: none; z-index: 10;
-            text-shadow: 0 0 10px rgba(79, 208, 231, 0.5);
+            text-shadow: 0 0 5px #000;
         }
         h1 { margin: 0; font-size: 1.2rem; color: #4FD0E7; letter-spacing: 2px; text-transform: uppercase; }
         p { font-size: 0.8rem; color: #aaa; margin-top: 5px; }
@@ -64,9 +64,9 @@
 <body>
 
     <div id="ui">
-        <h1>SOLAR // STEP 2: NEBULAE</h1>
+        <h1>SOLAR // GALAXY_TEXTURE</h1>
         <p>Status: <span id="status" style="color:#4FD0E7">System Overview</span></p>
-        <p style="font-size: 0.7rem; color: #888;">▼ Scroll out to see Glowing Gas Clouds</p>
+        <p style="font-size: 0.7rem; color: #888;">▼ Scroll out FAR to see Milky Way</p>
         <button onclick="resetCamera()">Reset View</button>
     </div>
 
@@ -83,11 +83,6 @@
         import * as THREE from 'three';
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
-        
-        // Post-Processing Imports (From Step 1)
-        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
-        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
-        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 
         const CONFIG = {
             particleSize: 2.2,
@@ -107,7 +102,7 @@
         ];
 
         const scene = new THREE.Scene();
-        scene.fog = new THREE.FogExp2(0x000000, 0.000005); 
+        scene.fog = new THREE.FogExp2(0x000000, 0.000005); // Minimal fog for deep space visibility
 
         const camera = new THREE.PerspectiveCamera(CONFIG.camFov, window.innerWidth/window.innerHeight, 1, 100000);
         camera.position.set(0, 180, 400);
@@ -115,20 +110,7 @@
         const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        renderer.toneMapping = THREE.ReinhardToneMapping;
-        renderer.toneMappingExposure = 1.0;
         document.body.appendChild(renderer.domElement);
-
-        // --- BLOOM CONFIGURATION ---
-        const renderScene = new RenderPass(scene, camera);
-        const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
-        bloomPass.threshold = 0.15;
-        bloomPass.strength = 1.4; // Strong glow for nebulae
-        bloomPass.radius = 0.5;
-
-        const composer = new EffectComposer(renderer);
-        composer.addPass(renderScene);
-        composer.addPass(bloomPass);
 
         const labelRenderer = new CSS2DRenderer();
         labelRenderer.setSize(window.innerWidth, window.innerHeight);
@@ -139,11 +121,11 @@
         const controls = new OrbitControls(camera, labelRenderer.domElement);
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
-        controls.maxDistance = 60000;
+        controls.maxDistance = 60000; // Massive zoom out allowed
         controls.autoRotate = true;
         controls.autoRotateSpeed = 0.3;
 
-        // --- TEXTURES ---
+        // --- ASSETS ---
         function createGlowDot() {
             const canvas = document.createElement('canvas');
             canvas.width = 64; canvas.height = 64;
@@ -156,22 +138,6 @@
             ctx.fillRect(0,0,64,64);
             return new THREE.CanvasTexture(canvas);
         }
-
-        // 1. NEW: CLOUD TEXTURE FOR NEBULAE
-        function createCloudTexture() {
-            const canvas = document.createElement('canvas');
-            canvas.width = 128; canvas.height = 128;
-            const ctx = canvas.getContext('2d');
-            // Irregular soft glow
-            const grad = ctx.createRadialGradient(64,64,0, 64,64,64);
-            grad.addColorStop(0, 'rgba(255,255,255,0.2)'); // Low opacity base
-            grad.addColorStop(0.6, 'rgba(255,255,255,0.05)');
-            grad.addColorStop(1, 'rgba(0,0,0,0)');
-            ctx.fillStyle = grad;
-            ctx.fillRect(0,0,128,128);
-            return new THREE.CanvasTexture(canvas);
-        }
-
         const particleMat = new THREE.PointsMaterial({
             size: CONFIG.particleSize,
             map: createGlowDot(),
@@ -182,115 +148,82 @@
             opacity: 0.9
         });
 
-        // --- GALAXY GENERATOR WITH NEBULAE ---
-        let galaxyMesh, nebulaeMesh;
-        function createGalaxyWithNebulae() {
+        // --- GALAXY GENERATOR: BARRED SPIRAL TEXTURE ---
+        let galaxyMesh;
+        function createBarredSpiralGalaxy() {
             const parameters = {
-                count: 60000, 
-                radius: 35000, 
-                branches: 2, 
-                spin: 1.5, 
-                randomness: 0.6, 
+                count: 60000,    // High count for texture density
+                radius: 35000,   // Huge radius
+                branches: 2,     // Barred spirals usually have 2 main arms
+                spin: 1.5,       // Tightness of spiral
+                randomness: 0.6, // "Fuzziness" (Texture feel)
                 randomnessPower: 3,
-                insideColor: 0xffddaa, 
-                outsideColor: 0x4488ff 
+                insideColor: 0xffddaa, // Bright Warm Core
+                outsideColor: 0x4488ff // Deep Blue Arms
             };
 
             const geometry = new THREE.BufferGeometry();
             const positions = new Float32Array(parameters.count * 3);
             const colors = new Float32Array(parameters.count * 3);
 
-            // 2. NEBULAE DATA
-            const nebulaCount = 15000;
-            const nebulaGeo = new THREE.BufferGeometry();
-            const nebulaPos = new Float32Array(nebulaCount * 3);
-            const nebulaCols = new Float32Array(nebulaCount * 3);
-
             const colorInside = new THREE.Color(parameters.insideColor);
             const colorOutside = new THREE.Color(parameters.outsideColor);
 
             for (let i = 0; i < parameters.count; i++) {
                 const i3 = i * 3;
+
+                // Radius: Distribute more stars near center for bright core
                 const r = Math.pow(Math.random(), 1.5) * parameters.radius;
                 
                 let spinAngle = r * parameters.spin * 0.0001;
                 let branchAngle = (i % parameters.branches) * ((Math.PI * 2) / parameters.branches);
 
+                // BAR LOGIC: If we are close to center, flatten the angle to create a "bar"
                 if (r < 6000) {
+                    // Reduce spin effect near center to create linear bar structure
                     spinAngle = spinAngle * (r / 6000); 
+                    // Add noise to widen the bar slightly
                     branchAngle += (Math.random()-0.5) * 0.2; 
                 }
 
                 const randomX = Math.pow(Math.random(), parameters.randomnessPower) * (Math.random() < 0.5 ? 1 : -1) * parameters.randomness * r;
-                const randomY = Math.pow(Math.random(), parameters.randomnessPower) * (Math.random() < 0.5 ? 1 : -1) * parameters.randomness * r * 0.15;
+                const randomY = Math.pow(Math.random(), parameters.randomnessPower) * (Math.random() < 0.5 ? 1 : -1) * parameters.randomness * r * 0.15; // Flat disc
                 const randomZ = Math.pow(Math.random(), parameters.randomnessPower) * (Math.random() < 0.5 ? 1 : -1) * parameters.randomness * r;
 
-                const x = Math.cos(branchAngle + spinAngle) * r + randomX;
-                const y = randomY;
-                const z = Math.sin(branchAngle + spinAngle) * r + randomZ;
+                positions[i3] = Math.cos(branchAngle + spinAngle) * r + randomX;
+                positions[i3 + 1] = randomY;
+                positions[i3 + 2] = Math.sin(branchAngle + spinAngle) * r + randomZ;
 
-                positions[i3] = x;
-                positions[i3 + 1] = y;
-                positions[i3 + 2] = z;
-
+                // Color Mixing
                 const mixedColor = colorInside.clone();
                 mixedColor.lerp(colorOutside, r / parameters.radius);
-                mixedColor.multiplyScalar(1.2); // Bloom boost
-
-                colors[i3] = mixedColor.r; colors[i3 + 1] = mixedColor.g; colors[i3 + 2] = mixedColor.b;
-
-                // 3. GENERATE NEBULAE CLOUDS (Secondary Layer)
-                if(i < nebulaCount) {
-                    // Position clouds near stars but with slightly more drift
-                    nebulaPos[i3] = x + (Math.random()-0.5)*1500;
-                    nebulaPos[i3+1] = y + (Math.random()-0.5)*800;
-                    nebulaPos[i3+2] = z + (Math.random()-0.5)*1500;
-
-                    // Nebula Color Logic: Deep Purple & Red
-                    const nColor = new THREE.Color();
-                    if(Math.random() > 0.5) nColor.setHex(0x440055); // Purple
-                    else nColor.setHex(0x660022); // Red
-                    
-                    // Boost brightness for Bloom to pick it up
-                    nColor.multiplyScalar(2.5); 
-
-                    nebulaCols[i3] = nColor.r; nebulaCols[i3+1] = nColor.g; nebulaCols[i3+2] = nColor.b;
+                
+                // Add dust lane variations (red/purple noise)
+                if(Math.random() > 0.8) {
+                    mixedColor.multiplyScalar(0.8); // Darker dust
+                    mixedColor.r += 0.1; // Slight red tint
                 }
+
+                colors[i3] = mixedColor.r;
+                colors[i3 + 1] = mixedColor.g;
+                colors[i3 + 2] = mixedColor.b;
             }
 
             geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
             geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
             const material = particleMat.clone();
-            material.size = 150;
-            material.opacity = 0;
+            material.size = 150; // Large soft dots to create "Cloud" texture
+            material.opacity = 0; // Start hidden
             material.sizeAttenuation = true;
             material.depthWrite = false;
 
             galaxyMesh = new THREE.Points(geometry, material);
-            galaxyMesh.rotation.x = 0.2;
+            galaxyMesh.rotation.x = 0.2; // Tilt galaxy slightly
             galaxyMesh.position.y = -500; 
             scene.add(galaxyMesh);
-
-            // 4. ADD NEBULAE MESH
-            nebulaGeo.setAttribute('position', new THREE.BufferAttribute(nebulaPos, 3));
-            nebulaGeo.setAttribute('color', new THREE.BufferAttribute(nebulaCols, 3));
-            
-            const nebulaMat = new THREE.PointsMaterial({
-                size: 600, // Large clouds
-                map: createCloudTexture(),
-                vertexColors: true,
-                transparent: true,
-                opacity: 0, // Starts hidden
-                blending: THREE.AdditiveBlending, // Key for glowing clouds
-                depthWrite: false,
-                sizeAttenuation: true
-            });
-
-            nebulaeMesh = new THREE.Points(nebulaGeo, nebulaMat);
-            galaxyMesh.add(nebulaeMesh); // Attach to galaxy so they rotate together
         }
-        createGalaxyWithNebulae();
+        createBarredSpiralGalaxy();
 
         // --- MATH UTILS ---
         function noise3D(x, y, z, scale = 1.0, seed = 0) {
@@ -369,9 +302,7 @@
             const cols = []; const c1 = new THREE.Color(0xFFCC00); const c2 = new THREE.Color(0xFF2200);
             for(let i=0; i<pts.length; i+=3) {
                 const d = Math.sqrt(pts[i]**2+pts[i+1]**2+pts[i+2]**2); const t = (d-r)/12;
-                const c = c1.clone().lerp(c2, t); 
-                c.multiplyScalar(2.0); // Boost sun for bloom
-                cols.push(c.r, c.g, c.b);
+                const c = c1.clone().lerp(c2, t); cols.push(c.r, c.g, c.b);
             }
             geo.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3));
             const mesh = new THREE.Points(geo, particleMat.clone());
@@ -508,11 +439,10 @@
             
             // FADE IN GALAXY AT DISTANCE
             if(galaxyMesh) {
+                // Opacity increases as we fly out past 2000 units
                 const op = THREE.MathUtils.clamp((dist - 2000) / 10000, 0, 1);
                 galaxyMesh.material.opacity = op;
                 galaxyMesh.rotation.y = time * 0.005; 
-                // 5. FADE NEBULAE TOO
-                if(nebulaeMesh) nebulaeMesh.material.opacity = op * 0.6; // Slightly more transparent
             }
             
             const labels = document.querySelectorAll('.label');
@@ -523,16 +453,12 @@
 
             controls.update();
             labelRenderer.render(scene, camera);
-            
-            // 6. RENDER WITH BLOOM
-            composer.render();
+            renderer.render(scene, camera);
         }
 
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth/window.innerHeight; camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight); 
-            composer.setSize(window.innerWidth, window.innerHeight);
-            labelRenderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setSize(window.innerWidth, window.innerHeight); labelRenderer.setSize(window.innerWidth, window.innerHeight);
         });
 
         animate();

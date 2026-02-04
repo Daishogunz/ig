@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Galactic Explorer HUD</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="hud">
+        <div class="header">
+            <div class="title-box">
+                <h1>SOLAR SYSTEM</h1>
+                <div class="subtitle">Real-time Orbital Simulation</div>
+            </div>
+            <div style="pointer-events: auto;">
+                <button onclick="window.resetCamera()" class="label" style="margin: 20px;">OVERVIEW</button>
+            </div>
+        </div>
+
+        <div class="nav-panel" id="nav-list">
+            </div>
+
+        <div id="status-bar">SYSTEM STATUS: ONLINE</div>
+
+        <div class="info-panel" id="info-box">
+            <div class="info-header">
+                <span id="p-name">EARTH</span>
+                <span style="font-size:12px; opacity:0.7">PLANET</span>
+            </div>
+            <div class="info-row"><span class="info-label">Distance:</span><span class="info-val" id="p-dist">149.6 M km</span></div>
+            <div class="info-row"><span class="info-label">Speed:</span><span class="info-val" id="p-speed">29.78 km/s</span></div>
+            <div class="info-desc" id="p-desc">Description text here.</div>
+            <button class="reset-btn" onclick="window.resetCamera()">EXIT VIEW</button>
+        </div>
+    </div>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module" src="main.js"></script>
+</body>
+</html>
